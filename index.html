@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>วงล้อสุ่มตัวเลข</title>
+<title>Random Number</title>
 
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Prompt:wght@300;500;700&display=swap');
@@ -71,17 +71,6 @@ button{
   box-shadow:0 0 25px rgba(255,215,0,0.8);
 }
 
-.result{
-  display:none;
-  margin-top:20px;
-}
-
-.number{
-  font-size:36px;
-  color:gold;
-  margin:10px 0;
-}
-
 .star{
   position:absolute;
   width:2px;
@@ -124,10 +113,6 @@ for(let i=0;i<40;i++){
   </div>
 
   <button id="spinBtn">สุ่มตัวเลข</button>
-
-  <div class="result" id="result">
-    <div class="number" id="finalNum"></div>
-  </div>
 </div>
 
 <!-- เสียง -->
@@ -144,8 +129,6 @@ const s1 = document.getElementById("s1");
 const s2 = document.getElementById("s2");
 const s3 = document.getElementById("s3");
 const spinBtn = document.getElementById("spinBtn");
-const result = document.getElementById("result");
-const finalNum = document.getElementById("finalNum");
 const ding = document.getElementById("ding");
 const finalSound = document.getElementById("finalSound");
 
@@ -169,7 +152,6 @@ function spinSlot(el, final, stopAfter){
 
 spinBtn.onclick = ()=>{
   spinBtn.disabled = true;
-  result.style.display = "none";
   slots.forEach(s=>s.classList.remove("glow"));
 
   const nums = Array.from({length:3},()=>Math.floor(Math.random()*10));
@@ -179,21 +161,18 @@ spinBtn.onclick = ()=>{
   spinSlot(slots[2], nums[2], 35);
 
   setTimeout(()=>{
-    const final = nums.join("");
-    finalNum.innerText = final;
-    result.style.display = "block";
     finalSound.currentTime = 0;
     finalSound.play();
     spinBtn.disabled = false;
   }, 2600);
 };
 
-/* ===== secret stats tap ===== */
+/* ===== secret tap ===== */
 let tap = 0;
 document.querySelector(".page-name").onclick = ()=>{
   tap++;
   if(tap >= 5){
-    alert("📊 โหมดลับ (ยังไม่เปิดสถิติ)");
+    alert("📊 โหมดลับ (ยังไม่เปิด)");
     tap = 0;
   }
 };
