@@ -1,1 +1,291 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>วงล้อสุ่มตัวเลข</title>
 
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Prompt:wght@300;500;700&display=swap');
+
+body{
+  margin:0;
+  font-family:'Prompt',sans-serif;
+  background:radial-gradient(circle at top,#1b2d5c,#050b1e);
+  color:#fff;
+  text-align:center;
+  min-height:100vh;
+  overflow:hidden;
+}
+
+.container{
+  padding:40px 20px;
+  position:relative;
+  z-index:2;
+}
+
+.page-name{
+  color:gold;
+  letter-spacing:2px;
+  font-size:22px;
+  cursor:pointer;
+}
+
+.subtitle{
+  color:#c7d2ff;
+  margin-bottom:10px;
+}
+
+.slot-box{
+  display:flex;
+  justify-content:center;
+  gap:15px;
+  margin:30px 0;
+}
+
+.slot{
+  width:80px;
+  height:100px;
+  border-radius:16px;
+  background:linear-gradient(180deg,#2b3a67,#0b1d3a);
+  box-shadow:0 0 20px rgba(255,215,0,0.5);
+  font-size:48px;
+  color:gold;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+
+.slot.glow{
+  box-shadow:0 0 40px rgba(255,215,0,1);
+}
+
+button{
+  padding:14px 40px;
+  font-size:18px;
+  border-radius:50px;
+  border:none;
+  cursor:pointer;
+  background:linear-gradient(45deg,#ffd700,#ffec8b);
+  color:#000;
+  box-shadow:0 0 25px rgba(255,215,0,0.8);
+}
+
+button:disabled{
+  opacity:.6;
+  cursor:not-allowed;
+}
+
+#chanceText{
+  color:#ffd700;
+  margin-top:10px;
+}
+
+.result{
+  display:none;
+  margin-top:20px;
+}
+
+.number{
+  font-size:36px;
+  color:gold;
+  margin:10px 0;
+}
+
+.star{
+  position:absolute;
+  width:2px;
+  height:2px;
+  background:white;
+  opacity:.6;
+  animation:twinkle 4s infinite;
+}
+
+@keyframes twinkle{
+  0%,100%{opacity:.2}
+  50%{opacity:1}
+}
+</style>
+</head>
+
+<body>
+
+<!-- ดาวพื้นหลัง -->
+<script>
+for(let i=0;i<40;i++){
+  let s=document.createElement("div");
+  s.className="star";
+  s.style.left=Math.random()*100+"vw";
+  s.style.top=Math.random()*100+"vh";
+  s.style.animationDelay=Math.random()*4+"s";
+  document.body.appendChild(s);
+}
+</script>
+
+<div class="container">
+  <div class="page-name">HOOR HAD DO DUAG</div>
+  <h1>🔮 คำตอบของคำถามคือ</h1>
+  <div class="subtitle">โชคชะตากำลังหมุนหาเลขของคุณ</div>
+  <div id="chanceText"></div>
+
+  <div class="slot-box">
+    <div class="slot" id="s1">0</div>
+    <div class="slot" id="s2">0</div>
+    <div class="slot" id="s3">0</div>
+  </div>
+
+  <button id="spinBtn">สุ่มตัวเลข</button>
+
+  <!-- เสียง -->
+<audio id="ding">
+  <source src="https://assets.mixkit.co/sfx/preview/mixkit-magic-bell-594.mp3">
+</audio>
+<audio id="finalSound">
+  <source src="https://assets.mixkit.co/sfx/preview/mixkit-achievement-bell-600.mp3">
+</audio>
+
+<script>
+/* ===== helper date ===== */
+function todayKey(){
+  return new Date().toISOString().slice(0,10);
+}
+function weekKey(){
+  const d = new Date();
+  d.setHours(0,0,0,0);
+  d.setDate(d.getDate() + 3 - (d.getDay() + 6) % 7);
+  const week1 = new Date(d.getFullYear(),0,4);
+  const weekNo = 1 + Math.round(((d - week1)/86400000 - 3 + (week1.getDay()+6)%7)/7);
+  return d.getFullYear() + "-W" + String(weekNo).padStart(2,"0");
+}
+
+/* ===== element ===== */
+const slots=[s1,s2,s3];
+const btn=spinBtn;
+const result=document.getElementById("result");
+const finalNum=document.getElementById("finalNum");
+const chanceText=document.getElementById("chanceText");
+const ding=document.getElementById("ding");
+const finalSound=document.getElementById("finalSound");
+
+/* ===== chance system ===== */
+const MAX_CHANCE=20;
+const today=todayKey();
+let savedDate=localStorage.getItem("fortuneDate");
+let chance=localStorage.getItem("fortuneChance");
+
+if(savedDate!==today){
+  chance=MAX_CHANCE;
+  localStorage.setItem("fortuneChance",chance);
+  localStorage.setItem("fortuneDate",today);
+}
+chance=chance?parseInt(chance):MAX_CHANCE;
+updateChance();
+
+function updateChance(){
+  if(chance<=0){
+    chanceText.innerText="❌ สิทธิ์วันนี้หมดแล้ว";
+    btn.disabled=true;
+  }else{
+    chanceText.innerText=`เหลือสิทธิ์ ${chance} ครั้ง (รีเซ็ตทุกวัน)`;
+    btn.disabled=false;
+  }
+}
+
+/* ===== statistic ===== */
+function saveStat(number){
+  const day=todayKey();
+  const week=weekKey();
+
+  let daily=JSON.parse(localStorage.getItem("fortuneStatsDaily")||"{}");
+  daily[day]=daily[day]||{};
+  daily[day][number]=(daily[day][number]||0)+1;
+  localStorage.setItem("fortuneStatsDaily",JSON.stringify(daily));
+
+  let weekly=JSON.parse(localStorage.getItem("fortuneStatsWeekly")||"{}");
+  weekly[week]=weekly[week]||{};
+  weekly[week][number]=(weekly[week][number]||0)+1;
+  localStorage.setItem("fortuneStatsWeekly",JSON.stringify(weekly));
+}
+
+/* ===== spin logic ===== */
+function spinSlot(el,final,stopAfter){
+  let count=0,speed=60;
+  let timer=setInterval(()=>{
+    el.innerText=Math.floor(Math.random()*10);
+    count++; speed+=5;
+    if(count>=stopAfter){
+      clearInterval(timer);
+      el.innerText=final;
+      el.classList.add("glow");
+      ding.currentTime=0; ding.play();
+    }
+  },speed);
+}
+
+btn.onclick=()=>{
+  if(chance<=0) return;
+  chance--; localStorage.setItem("fortuneChance",chance);
+  updateChance();
+
+  btn.disabled=true;
+  result.style.display="none";
+  slots.forEach(s=>s.classList.remove("glow"));
+
+  let nums=[0,0,0].map(()=>Math.floor(Math.random()*10));
+  spinSlot(slots[0],nums[0],15);
+  spinSlot(slots[1],nums[1],25);
+  spinSlot(slots[2],nums[2],35);
+
+  setTimeout(()=>{
+    const final=nums.join("");
+    finalNum.innerText=final;
+    saveStat(final);
+    result.style.display="block";
+    finalSound.currentTime=0; finalSound.play();
+    btn.disabled=false;
+    updateChance();
+  },2600);
+};
+
+/* ===== admin stats ===== */
+function showStats(){
+  let daily=JSON.parse(localStorage.getItem("fortuneStatsDaily")||"{}");
+  let weekly=JSON.parse(localStorage.getItem("fortuneStatsWeekly")||"{}");
+  let text="📊 สถิติเลข\n\n";
+
+  const d=todayKey();
+  if(daily[d]){
+    text+="📅 วันนี้\n";
+    Object.entries(daily[d]).sort((a,b)=>b[1]-a[1])
+      .forEach(([n,c],i)=>text+=`${i+1}. ${n} → ${c} ครั้ง\n`);
+  }else text+="📅 วันนี้ยังไม่มีข้อมูล\n";
+
+  text+="\n";
+  const w=weekKey();
+  if(weekly[w]){
+    text+="📆 สัปดาห์นี้\n";
+    Object.entries(weekly[w]).sort((a,b)=>b[1]-a[1])
+      .forEach(([n,c],i)=>text+=`${i+1}. ${n} → ${c} ครั้ง\n`);
+  }else text+="📆 สัปดาห์นี้ยังไม่มีข้อมูล\n";
+
+  alert(text);
+}
+
+/* ===== secret tap ===== */
+let tap=0;
+document.querySelector(".page-name").onclick=()=>{
+  tap++;
+  if(tap>=5){
+    showStats();
+    tap=0;
+  }
+};
+
+function goComment(){
+  alert("📸 กรุณาแคปหน้าจอ แล้วระบบจะพากลับไปคอมเมนต์");
+  window.location.href="https://www.facebook.com/";
+}
+</script>
+
+</body>
+</html>
