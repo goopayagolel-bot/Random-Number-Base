@@ -167,29 +167,6 @@ const chanceText=document.getElementById("chanceText");
 const ding=document.getElementById("ding");
 const finalSound=document.getElementById("finalSound");
 
-/* ===== chance system ===== */
-const MAX_CHANCE=20;
-const today=todayKey();
-let savedDate=localStorage.getItem("fortuneDate");
-let chance=localStorage.getItem("fortuneChance");
-
-if(savedDate!==today){
-  chance=MAX_CHANCE;
-  localStorage.setItem("fortuneChance",chance);
-  localStorage.setItem("fortuneDate",today);
-}
-chance=chance?parseInt(chance):MAX_CHANCE;
-updateChance();
-
-function updateChance(){
-  if(chance<=0){
-    chanceText.innerText="❌ สิทธิ์วันนี้หมดแล้ว";
-    btn.disabled=true;
-  }else{
-    chanceText.innerText=`เหลือสิทธิ์ ${chance} ครั้ง (รีเซ็ตทุกวัน)`;
-    btn.disabled=false;
-  }
-}
 
 /* ===== statistic ===== */
 function saveStat(number){
