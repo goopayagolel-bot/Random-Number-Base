@@ -71,16 +71,6 @@ button{
   box-shadow:0 0 25px rgba(255,215,0,0.8);
 }
 
-button:disabled{
-  opacity:.6;
-  cursor:not-allowed;
-}
-
-#chanceText{
-  color:#ffd700;
-  margin-top:10px;
-}
-
 .result{
   display:none;
   margin-top:20px;
@@ -126,7 +116,6 @@ for(let i=0;i<40;i++){
   <div class="page-name">Random Number</div>
   <h1>🔮 คำตอบของคำถามคือ</h1>
   <div class="subtitle">โชคชะตากำลังหมุนหาเลขของคุณ</div>
-  <div id="chanceText"></div>
 
   <div class="slot-box">
     <div class="slot" id="s1">0</div>
@@ -136,7 +125,12 @@ for(let i=0;i<40;i++){
 
   <button id="spinBtn">สุ่มตัวเลข</button>
 
-  <!-- เสียง -->
+  <div class="result" id="result">
+    <div class="number" id="finalNum"></div>
+  </div>
+</div>
+
+<!-- เสียง -->
 <audio id="ding">
   <source src="https://assets.mixkit.co/sfx/preview/mixkit-magic-bell-594.mp3">
 </audio>
@@ -145,123 +139,64 @@ for(let i=0;i<40;i++){
 </audio>
 
 <script>
-/* ===== helper date ===== */
-function todayKey(){
-  return new Date().toISOString().slice(0,10);
-}
-function weekKey(){
-  const d = new Date();
-  d.setHours(0,0,0,0);
-  d.setDate(d.getDate() + 3 - (d.getDay() + 6) % 7);
-  const week1 = new Date(d.getFullYear(),0,4);
-  const weekNo = 1 + Math.round(((d - week1)/86400000 - 3 + (week1.getDay()+6)%7)/7);
-  return d.getFullYear() + "-W" + String(weekNo).padStart(2,"0");
-}
-
 /* ===== element ===== */
-const slots=[s1,s2,s3];
-const btn=spinBtn;
-const result=document.getElementById("result");
-const finalNum=document.getElementById("finalNum");
-const chanceText=document.getElementById("chanceText");
-const ding=document.getElementById("ding");
-const finalSound=document.getElementById("finalSound");
+const s1 = document.getElementById("s1");
+const s2 = document.getElementById("s2");
+const s3 = document.getElementById("s3");
+const spinBtn = document.getElementById("spinBtn");
+const result = document.getElementById("result");
+const finalNum = document.getElementById("finalNum");
+const ding = document.getElementById("ding");
+const finalSound = document.getElementById("finalSound");
 
-
-/* ===== statistic ===== */
-function saveStat(number){
-  const day=todayKey();
-  const week=weekKey();
-
-  let daily=JSON.parse(localStorage.getItem("fortuneStatsDaily")||"{}");
-  daily[day]=daily[day]||{};
-  daily[day][number]=(daily[day][number]||0)+1;
-  localStorage.setItem("fortuneStatsDaily",JSON.stringify(daily));
-
-  let weekly=JSON.parse(localStorage.getItem("fortuneStatsWeekly")||"{}");
-  weekly[week]=weekly[week]||{};
-  weekly[week][number]=(weekly[week][number]||0)+1;
-  localStorage.setItem("fortuneStatsWeekly",JSON.stringify(weekly));
-}
+const slots = [s1, s2, s3];
 
 /* ===== spin logic ===== */
-function spinSlot(el,final,stopAfter){
-  let count=0,speed=60;
-  let timer=setInterval(()=>{
-    el.innerText=Math.floor(Math.random()*10);
-    count++; speed+=5;
-    if(count>=stopAfter){
+function spinSlot(el, final, stopAfter){
+  let count = 0;
+  let timer = setInterval(()=>{
+    el.innerText = Math.floor(Math.random()*10);
+    count++;
+    if(count >= stopAfter){
       clearInterval(timer);
-      el.innerText=final;
+      el.innerText = final;
       el.classList.add("glow");
-      ding.currentTime=0; ding.play();
+      ding.currentTime = 0;
+      ding.play();
     }
-  },speed);
+  }, 80);
 }
 
-btn.onclick=()=>{
-  if(chance<=0) return;
-  chance--; localStorage.setItem("fortuneChance",chance);
-  updateChance();
-
-  btn.disabled=true;
-  result.style.display="none";
+spinBtn.onclick = ()=>{
+  spinBtn.disabled = true;
+  result.style.display = "none";
   slots.forEach(s=>s.classList.remove("glow"));
 
-  let nums=[0,0,0].map(()=>Math.floor(Math.random()*10));
-  spinSlot(slots[0],nums[0],15);
-  spinSlot(slots[1],nums[1],25);
-  spinSlot(slots[2],nums[2],35);
+  const nums = Array.from({length:3},()=>Math.floor(Math.random()*10));
+
+  spinSlot(slots[0], nums[0], 15);
+  spinSlot(slots[1], nums[1], 25);
+  spinSlot(slots[2], nums[2], 35);
 
   setTimeout(()=>{
-    const final=nums.join("");
-    finalNum.innerText=final;
-    saveStat(final);
-    result.style.display="block";
-    finalSound.currentTime=0; finalSound.play();
-    btn.disabled=false;
-    updateChance();
-  },2600);
+    const final = nums.join("");
+    finalNum.innerText = final;
+    result.style.display = "block";
+    finalSound.currentTime = 0;
+    finalSound.play();
+    spinBtn.disabled = false;
+  }, 2600);
 };
 
-/* ===== admin stats ===== */
-function showStats(){
-  let daily=JSON.parse(localStorage.getItem("fortuneStatsDaily")||"{}");
-  let weekly=JSON.parse(localStorage.getItem("fortuneStatsWeekly")||"{}");
-  let text="📊 สถิติเลข\n\n";
-
-  const d=todayKey();
-  if(daily[d]){
-    text+="📅 วันนี้\n";
-    Object.entries(daily[d]).sort((a,b)=>b[1]-a[1])
-      .forEach(([n,c],i)=>text+=`${i+1}. ${n} → ${c} ครั้ง\n`);
-  }else text+="📅 วันนี้ยังไม่มีข้อมูล\n";
-
-  text+="\n";
-  const w=weekKey();
-  if(weekly[w]){
-    text+="📆 สัปดาห์นี้\n";
-    Object.entries(weekly[w]).sort((a,b)=>b[1]-a[1])
-      .forEach(([n,c],i)=>text+=`${i+1}. ${n} → ${c} ครั้ง\n`);
-  }else text+="📆 สัปดาห์นี้ยังไม่มีข้อมูล\n";
-
-  alert(text);
-}
-
-/* ===== secret tap ===== */
-let tap=0;
-document.querySelector(".page-name").onclick=()=>{
+/* ===== secret stats tap ===== */
+let tap = 0;
+document.querySelector(".page-name").onclick = ()=>{
   tap++;
-  if(tap>=5){
-    showStats();
-    tap=0;
+  if(tap >= 5){
+    alert("📊 โหมดลับ (ยังไม่เปิดสถิติ)");
+    tap = 0;
   }
 };
-
-function goComment(){
-  alert("📸 กรุณาแคปหน้าจอ แล้วระบบจะพากลับไปคอมเมนต์");
-  window.location.href="https://www.facebook.com/";
-}
 </script>
 
 </body>
